@@ -75,16 +75,18 @@ namespace RespawningTreasureChests
                         
                         if (DateTime.Now >= dataTime.AddMinutes(respawnValue))
                         {
+                            __instance.m_nview.GetZDO().Set(ZDOVars.s_addedDefaultItems, false);
                             if (respawnType == RespawningTreasureChestsPlugin.Respawn.OnEmpty)
                             {
                                 __instance.m_nview.GetZDO().Set(Hash.chestRespawn, DateTime.MaxValue.Ticks);
+                                __instance.AddDefaultItems();
                             }
                             else
                             {
                                 __instance.m_nview.GetZDO().Set(Hash.chestRespawn, DateTime.Now.Ticks);
+                                __instance.m_inventory.RemoveAll();
+                                __instance.AddDefaultItems();
                             }
-                            __instance.m_nview.GetZDO().Set(ZDOVars.s_addedDefaultItems, false);
-                            __instance.AddDefaultItems();
                             __instance.m_nview.GetZDO().Set(ZDOVars.s_addedDefaultItems,  true);
                             RespawningTreasureChestsPlugin.RespawningTreasureChestsLogger.Log(LogLevel.Message, $"{__instance.name} items respawned");
                         }
@@ -137,23 +139,23 @@ namespace RespawningTreasureChests
                 List<DropTable.DropData> drops = new List<DropTable.DropData>();
                 foreach (string data in itemData.Split(':'))
                 {
-                    if (data.Length == 4)
+                    string[] dataList = data.Split(',');
+                    if (dataList.Length < 4) return;
+                    string itemName = dataList[0];
+                    string stackMin = dataList[1];
+                    string stackMax = dataList[2];
+                    string weight = dataList[3];
+                    
+                    GameObject item = scene.GetPrefab(itemName);
+                    if (!item) return;
+                    drops.Add(new DropTable.DropData()
                     {
-                        string itemName = data.Split(',')[0];
-                        string stackMin = data.Split(',')[1];
-                        string stackMax = data.Split(',')[2];
-                        string weight = data.Split(',')[3];
-                        GameObject item = scene.GetPrefab(itemName);
-                        if (!item) return;
-                        drops.Add(new DropTable.DropData()
-                        {
-                            m_item = item,
-                            m_stackMin = int.Parse(stackMin),
-                            m_stackMax = int.Parse(stackMax),
-                            m_weight = float.Parse(weight)
-                        });
-                    }
-                }
+                        m_item = item,
+                        m_stackMin = int.Parse(stackMin),
+                        m_stackMax = int.Parse(stackMax),
+                        m_weight = float.Parse(weight)
+                    });
+                } 
                 Container containerScript = obj.GetComponent<Container>();
                 containerScript.m_defaultItems.m_drops = drops;
             }
