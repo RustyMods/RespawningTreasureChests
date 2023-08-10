@@ -11,7 +11,7 @@ namespace RespawningTreasureChests
     { 
         public static readonly int chestRespawn = "ChestRespawn".GetStableHashCode();
     }
-    public class Patches
+    public static class Patches
     {
         [HarmonyPatch(typeof(Container))]
         public class ContainerPatches
@@ -19,10 +19,11 @@ namespace RespawningTreasureChests
             [HarmonyPatch(nameof(Container.OnContainerChanged)), HarmonyPostfix]
             static void SetRespawn(Container __instance)
             {
-                var respawnToggle = RespawningTreasureChestsPlugin._respawningChests.Value;
+                var respawnToggle = RespawningTreasureChestsPlugin._RespawningChestConfigEntry.Value;
                 if (respawnToggle == RespawningTreasureChestsPlugin.Toggle.Off) return;
-                
-                string prefabNameContains = RespawningTreasureChestsPlugin._prefabNameContains.Value;
+
+                var respawnType = RespawningTreasureChestsPlugin._RespawnTypeConfigEntry.Value;
+                string prefabNameContains = RespawningTreasureChestsPlugin._PrefabNameContainsConfigEntry.Value;
                 
                 string[] prefabNames = prefabNameContains.Split(',');
                 foreach (string name in prefabNames)
@@ -31,7 +32,16 @@ namespace RespawningTreasureChests
                     {
                         var view = __instance.m_nview;
                         if (view == null || !view.IsValid()) return;
-                        if (__instance.m_inventory.m_inventory.Count == 0)
+
+                        if (respawnType == RespawningTreasureChestsPlugin.Respawn.OnEmpty)
+                        {
+                            if (__instance.m_inventory.m_inventory.Count == 0)
+                            {
+                                DateTime currentTime = DateTime.Now;
+                                view.GetZDO().Set(Hash.chestRespawn, currentTime.Ticks);
+                            }
+                        }
+                        else
                         {
                             DateTime currentTime = DateTime.Now;
                             view.GetZDO().Set(Hash.chestRespawn, currentTime.Ticks);
@@ -43,12 +53,12 @@ namespace RespawningTreasureChests
             [HarmonyPatch(nameof(Container.CheckForChanges)), HarmonyPostfix]
             static void RespawnItems(Container __instance)
             {
-                var respawnToggle = RespawningTreasureChestsPlugin._respawningChests.Value;
+                var respawnToggle = RespawningTreasureChestsPlugin._RespawningChestConfigEntry.Value;
                 if (respawnToggle == RespawningTreasureChestsPlugin.Toggle.Off) return;
                 
-                string prefabNameContains = RespawningTreasureChestsPlugin._prefabNameContains.Value;
-                int respawnValue = RespawningTreasureChestsPlugin._respawnTime.Value;
-
+                var respawnType = RespawningTreasureChestsPlugin._RespawnTypeConfigEntry.Value;
+                string prefabNameContains = RespawningTreasureChestsPlugin._PrefabNameContainsConfigEntry.Value;
+                int respawnValue = RespawningTreasureChestsPlugin._RespawnTimeConfigEntry.Value;
                 
                 string[] prefabNames = prefabNameContains.Split(',');
                 foreach (string name in prefabNames)
@@ -62,14 +72,17 @@ namespace RespawningTreasureChests
                         DateTime dataTime = new DateTime(data);
                         // Check if timer is set to max
                         if (dataTime.Ticks == DateTime.MaxValue.Ticks) return;
-                        // Respawn value
-                        DateTime respawn = dataTime.AddMinutes(respawnValue);
                         
-                        DateTime currentTime = DateTime.Now;
-                        
-                        if (currentTime >= respawn)
+                        if (DateTime.Now >= dataTime.AddMinutes(respawnValue))
                         {
-                            __instance.m_nview.GetZDO().Set(Hash.chestRespawn, DateTime.MaxValue.Ticks);
+                            if (respawnType == RespawningTreasureChestsPlugin.Respawn.OnEmpty)
+                            {
+                                __instance.m_nview.GetZDO().Set(Hash.chestRespawn, DateTime.MaxValue.Ticks);
+                            }
+                            else
+                            {
+                                __instance.m_nview.GetZDO().Set(Hash.chestRespawn, DateTime.Now.Ticks);
+                            }
                             __instance.m_nview.GetZDO().Set(ZDOVars.s_addedDefaultItems, false);
                             __instance.AddDefaultItems();
                             __instance.m_nview.GetZDO().Set(ZDOVars.s_addedDefaultItems,  true);
@@ -118,9 +131,9 @@ namespace RespawningTreasureChests
 
             private static void SetItemData(ZNetScene scene, string prefabName, string itemData)
             {
-                GameObject treasureChest = scene.GetPrefab(prefabName);
-                if (!treasureChest) return;
-                Container containerScript = treasureChest.GetComponent<Container>();
+                GameObject obj = scene.GetPrefab(prefabName);
+                if (!obj) return;
+                
                 List<DropTable.DropData> drops = new List<DropTable.DropData>();
                 foreach (string data in itemData.Split(':'))
                 {
@@ -141,6 +154,7 @@ namespace RespawningTreasureChests
                         });
                     }
                 }
+                Container containerScript = obj.GetComponent<Container>();
                 containerScript.m_defaultItems.m_drops = drops;
             }
         }

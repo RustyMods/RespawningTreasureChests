@@ -39,15 +39,21 @@ namespace RespawningTreasureChests
         private static readonly ConfigSync ConfigSync = new(ModGUID)
             { DisplayName = ModName, CurrentVersion = ModVersion, MinimumRequiredVersion = ModVersion };
 
-        // Location Manager variables
-        public Texture2D tex;
-        private Sprite mySprite;
-        private SpriteRenderer sr;
+        // // Location Manager variables
+        // public Texture2D tex;
+        // private Sprite mySprite;
+        // private SpriteRenderer sr;
 
         public enum Toggle
         {
             On = 1,
             Off = 0
+        }
+
+        public enum Respawn
+        {
+            OnEmpty = 1,
+            OnRepeat = 0
         }
 
         public void Awake()
@@ -57,15 +63,29 @@ namespace RespawningTreasureChests
 
             _serverConfigLocked = config("1 - General", "Lock Configuration", Toggle.On,
                 "If on, the configuration is locked and can be changed by server admins only.");
-
-            _respawningChests = config("2 - Respawn Configurations", "Chests Respawn Toggle", Toggle.On,
+            #region Respawning Configurations
+            _RespawningChestConfigEntry = config(
+                "2 - Respawn Configurations",
+                "Chests Respawn Toggle",
+                Toggle.On,
                 "If on, chests respawn.");
-            _prefabNameContains = config("2 - Respawn Configurations", "Affected Prefabs Name Contains", "TreasureChest",
-                "Prefab name contains following strings, multiple can be affected by seperating prefab filter by commas.");
-            _respawnTime = config("2 - Respawn Configurations", "Respawn Time in minutes", 60,
+            _RespawnTypeConfigEntry = config(
+                "2 - Respawn Configurations",
+                "Respawn Trigger",
+                Respawn.OnEmpty,
+                "Toggle for type of trigger to start respawning timer");
+            _PrefabNameContainsConfigEntry = config(
+                "2 - Respawn Configurations",
+                "Affected Prefabs Name Contains",
+                "TreasureChest",
+                "Prefab name contains following strings, multiple can be affected by separating prefab filter by commas.");
+            _RespawnTimeConfigEntry = config(
+                "2 - Respawn Configurations",
+                "Respawn Time in minutes",
+                60,
                 "Timer in minutes when treasure chest emptied.");
-
-
+            #endregion
+            #region Treasure Chest Configurations
             _TreasureChestMeadowsConfigEntry = config(
                 "3 - Treasure Chest Configurations",
                 "Treasure Chest Meadows",
@@ -136,22 +156,21 @@ namespace RespawningTreasureChests
                 "Treasure Chest Dvergr Town",
                 "MeadHealthMinor,1,2,1:MeadStaminaMinor,1,2,1:MeadPoisonResist,1,2,1:Sausages,3,6,1:Tankard_dvergr,1,1,0.1:Coins,33,66,1:Coins,33,66,1",
                 "List of item drops");
-
-            
-            
+            #endregion
             _ = ConfigSync.AddLockingConfigEntry(_serverConfigLocked);
-
-            _ = ConfigSync.AddConfigEntry(_respawningChests);
-            _ = ConfigSync.AddConfigEntry(_prefabNameContains);
-            _ = ConfigSync.AddConfigEntry(_respawnTime);
-            
+            # region Respawning Chests Config Entries
+            _ = ConfigSync.AddConfigEntry(_RespawningChestConfigEntry);
+            _ = ConfigSync.AddConfigEntry(_RespawnTypeConfigEntry);
+            _ = ConfigSync.AddConfigEntry(_PrefabNameContainsConfigEntry);
+            _ = ConfigSync.AddConfigEntry(_RespawnTimeConfigEntry);
+            #endregion
+            #region Treasure Chest Config Entries
             _ = ConfigSync.AddConfigEntry(_TreasureChestMeadowsConfigEntry);
             _ = ConfigSync.AddConfigEntry(_TreasureChestMeadowsBuriedConfigEntry);
             _ = ConfigSync.AddConfigEntry(_TreasureChestFCryptConfigEntry);
             _ = ConfigSync.AddConfigEntry(_TreasureChestTrollCaveConfigEntry);
             _ = ConfigSync.AddConfigEntry(_TreasureChestForestCryptConfigEntry);
             _ = ConfigSync.AddConfigEntry(_TreasureChestBlackForestConfigEntry);
-
             _ = ConfigSync.AddConfigEntry(_TreasureChestSwampConfigEntry);
             _ = ConfigSync.AddConfigEntry(_TreasureChestSunkenCryptConfigEntry);
             _ = ConfigSync.AddConfigEntry(_TreasureChestMountainsConfigEntry);
@@ -160,22 +179,12 @@ namespace RespawningTreasureChests
             _ = ConfigSync.AddConfigEntry(_TreasureChestPlainsStoneConfigEntry);
             _ = ConfigSync.AddConfigEntry(_TreasureChestDvergerTowerConfigEntry);
             _ = ConfigSync.AddConfigEntry(_TreasureChestDvergerTownConfigEntry);
-            
-            
-            
+            #endregion
+
             Assembly assembly = Assembly.GetExecutingAssembly();
             _harmony.PatchAll(assembly);
             SetupWatcher();
         }
-
-        private class TreasureChestConfig
-        {
-            public string prefabName;
-            public int minStack;
-            public int maxStack;
-            public float weight;
-        }
-
         private void OnDestroy()
         {
             Config.Save();
@@ -212,9 +221,10 @@ namespace RespawningTreasureChests
 
         private static ConfigEntry<Toggle> _serverConfigLocked = null!;
 
-        public static ConfigEntry<Toggle> _respawningChests = null!;
-        public static ConfigEntry<string> _prefabNameContains = null!;
-        public static ConfigEntry<int> _respawnTime = null!;
+        public static ConfigEntry<Toggle> _RespawningChestConfigEntry = null!;
+        public static ConfigEntry<string> _PrefabNameContainsConfigEntry = null!;
+        public static ConfigEntry<int> _RespawnTimeConfigEntry = null!;
+        public static ConfigEntry<Respawn> _RespawnTypeConfigEntry = null!;
 
         public static ConfigEntry<string> _TreasureChestMeadowsConfigEntry = null!;
         public static ConfigEntry<string> _TreasureChestMeadowsBuriedConfigEntry = null!;
