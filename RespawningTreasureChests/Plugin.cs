@@ -63,6 +63,8 @@ namespace RespawningTreasureChests
 
             _serverConfigLocked = config("1 - General", "Lock Configuration", Toggle.On,
                 "If on, the configuration is locked and can be changed by server admins only.");
+            _ = ConfigSync.AddLockingConfigEntry(_serverConfigLocked);
+            
             #region Respawning Configurations
             _RespawningChestConfigEntry = config(
                 "2 - Respawn Configurations",
@@ -156,29 +158,6 @@ namespace RespawningTreasureChests
                 "Treasure Chest Dvergr Town",
                 "MeadHealthMinor,1,2,1:MeadStaminaMinor,1,2,1:MeadPoisonResist,1,2,1:Sausages,3,6,1:Tankard_dvergr,1,1,0.1:Coins,33,66,1:Coins,33,66,1",
                 "List of item drops");
-            #endregion
-            _ = ConfigSync.AddLockingConfigEntry(_serverConfigLocked);
-            # region Respawning Chests Config Entries
-            _ = ConfigSync.AddConfigEntry(_RespawningChestConfigEntry);
-            _ = ConfigSync.AddConfigEntry(_RespawnTypeConfigEntry);
-            _ = ConfigSync.AddConfigEntry(_PrefabNameContainsConfigEntry);
-            _ = ConfigSync.AddConfigEntry(_RespawnTimeConfigEntry);
-            #endregion
-            #region Treasure Chest Config Entries
-            _ = ConfigSync.AddConfigEntry(_TreasureChestMeadowsConfigEntry);
-            _ = ConfigSync.AddConfigEntry(_TreasureChestMeadowsBuriedConfigEntry);
-            _ = ConfigSync.AddConfigEntry(_TreasureChestFCryptConfigEntry);
-            _ = ConfigSync.AddConfigEntry(_TreasureChestTrollCaveConfigEntry);
-            _ = ConfigSync.AddConfigEntry(_TreasureChestForestCryptConfigEntry);
-            _ = ConfigSync.AddConfigEntry(_TreasureChestBlackForestConfigEntry);
-            _ = ConfigSync.AddConfigEntry(_TreasureChestSwampConfigEntry);
-            _ = ConfigSync.AddConfigEntry(_TreasureChestSunkenCryptConfigEntry);
-            _ = ConfigSync.AddConfigEntry(_TreasureChestMountainsConfigEntry);
-            _ = ConfigSync.AddConfigEntry(_TreasureChestMountainCaveConfigEntry);
-            _ = ConfigSync.AddConfigEntry(_TreasureChestHeathConfigEntry);
-            _ = ConfigSync.AddConfigEntry(_TreasureChestPlainsStoneConfigEntry);
-            _ = ConfigSync.AddConfigEntry(_TreasureChestDvergerTowerConfigEntry);
-            _ = ConfigSync.AddConfigEntry(_TreasureChestDvergerTownConfigEntry);
             #endregion
 
             Assembly assembly = Assembly.GetExecutingAssembly();
