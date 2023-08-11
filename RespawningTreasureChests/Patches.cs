@@ -16,6 +16,15 @@ namespace RespawningTreasureChests
         [HarmonyPatch(typeof(Container))]
         public class ContainerPatches
         {
+            private static void HandleRespawn(Container containerInstance, RespawningTreasureChestsPlugin.Respawn respawnType)
+            {
+                if (containerInstance.m_inventory.m_inventory.Count == 0 || respawnType != RespawningTreasureChestsPlugin.Respawn.OnEmpty)
+                {
+                    var currentTime = DateTime.Now;
+                    containerInstance.m_nview.GetZDO().Set(Hash.chestRespawn, currentTime.Ticks);
+                }
+            }
+
             [HarmonyPatch(nameof(Container.OnContainerChanged)), HarmonyPostfix]
             static void SetRespawn(Container __instance)
             {
@@ -23,29 +32,13 @@ namespace RespawningTreasureChests
                 if (respawnToggle == RespawningTreasureChestsPlugin.Toggle.Off) return;
 
                 var respawnType = RespawningTreasureChestsPlugin._RespawnTypeConfigEntry.Value;
-                string prefabNameContains = RespawningTreasureChestsPlugin._PrefabNameContainsConfigEntry.Value;
-                
-                string[] prefabNames = prefabNameContains.Split(',');
-                foreach (string name in prefabNames)
-                {
-                    if (__instance.name.Contains(name))
-                    {
-                        var view = __instance.m_nview;
-                        if (view == null || !view.IsValid()) return;
+                var prefabNames = RespawningTreasureChestsPlugin._PrefabNameContainsConfigEntry.Value.Split(',');
 
-                        if (respawnType == RespawningTreasureChestsPlugin.Respawn.OnEmpty)
-                        {
-                            if (__instance.m_inventory.m_inventory.Count == 0)
-                            {
-                                DateTime currentTime = DateTime.Now;
-                                view.GetZDO().Set(Hash.chestRespawn, currentTime.Ticks);
-                            }
-                        }
-                        else
-                        {
-                            DateTime currentTime = DateTime.Now;
-                            view.GetZDO().Set(Hash.chestRespawn, currentTime.Ticks);
-                        }
+                foreach (var name in prefabNames)
+                {
+                    if (__instance.name.Contains(name) && __instance.m_nview?.IsValid() == true)
+                    {
+                        HandleRespawn(__instance, respawnType);
                     }
                 }
             }
@@ -55,25 +48,19 @@ namespace RespawningTreasureChests
             {
                 var respawnToggle = RespawningTreasureChestsPlugin._RespawningChestConfigEntry.Value;
                 if (respawnToggle == RespawningTreasureChestsPlugin.Toggle.Off) return;
-                
+
                 var respawnType = RespawningTreasureChestsPlugin._RespawnTypeConfigEntry.Value;
-                string prefabNameContains = RespawningTreasureChestsPlugin._PrefabNameContainsConfigEntry.Value;
-                int respawnValue = RespawningTreasureChestsPlugin._RespawnTimeConfigEntry.Value;
-                
-                string[] prefabNames = prefabNameContains.Split(',');
-                foreach (string name in prefabNames)
+                var prefabNames = RespawningTreasureChestsPlugin._PrefabNameContainsConfigEntry.Value.Split(',');
+                var respawnDuration = TimeSpan.FromMinutes(RespawningTreasureChestsPlugin._RespawnTimeConfigEntry.Value);
+
+                foreach (var name in prefabNames)
                 {
-                    if (__instance.name.Contains(name))
+                    if (__instance.name.Contains(name) && __instance.m_nview?.IsValid() == true)
                     {
-                        var view = __instance.m_nview;
-                        if (!view || !view.IsValid()) return;
-                        
-                        long data = view.GetZDO().GetLong(Hash.chestRespawn, 0);
-                        DateTime dataTime = new DateTime(data);
-                        // Check if timer is set to max
-                        if (dataTime.Ticks == DateTime.MaxValue.Ticks) return;
-                        
-                        if (DateTime.Now >= dataTime.AddMinutes(respawnValue))
+                        var storedTimeTicks = __instance.m_nview.GetZDO().GetLong(Hash.chestRespawn, 0);
+                        var storedTime = new DateTime(storedTimeTicks);
+
+                        if (storedTime != DateTime.MaxValue && DateTime.Now >= storedTime + respawnDuration)
                         {
                             __instance.m_nview.GetZDO().Set(ZDOVars.s_addedDefaultItems, false);
                             if (respawnType == RespawningTreasureChestsPlugin.Respawn.OnEmpty)
@@ -100,64 +87,63 @@ namespace RespawningTreasureChests
         {
             public static void Postfix(ZNetScene __instance)
             {
-                string MeadowsData = RespawningTreasureChestsPlugin._TreasureChestMeadowsConfigEntry.Value;
-                string MeadowsBuriedData = RespawningTreasureChestsPlugin._TreasureChestMeadowsBuriedConfigEntry.Value;
-                string FCryptData = RespawningTreasureChestsPlugin._TreasureChestFCryptConfigEntry.Value;
-                string TrollCaveData = RespawningTreasureChestsPlugin._TreasureChestTrollCaveConfigEntry.Value;
-                string ForestCryptData = RespawningTreasureChestsPlugin._TreasureChestForestCryptConfigEntry.Value;
-                string BlackForestData = RespawningTreasureChestsPlugin._TreasureChestBlackForestConfigEntry.Value;
-                string SwampData = RespawningTreasureChestsPlugin._TreasureChestSwampConfigEntry.Value;
-                string SunkenCryptData = RespawningTreasureChestsPlugin._TreasureChestSunkenCryptConfigEntry.Value;
-                string MountainsData = RespawningTreasureChestsPlugin._TreasureChestMountainsConfigEntry.Value;
-                string MountainCaveData = RespawningTreasureChestsPlugin._TreasureChestMountainCaveConfigEntry.Value;
-                string HeathData = RespawningTreasureChestsPlugin._TreasureChestHeathConfigEntry.Value;
-                string PlainsStoneData = RespawningTreasureChestsPlugin._TreasureChestPlainsStoneConfigEntry.Value;
-                string DvergerTowerData = RespawningTreasureChestsPlugin._TreasureChestDvergerTowerConfigEntry.Value;
-                string DvergerTownData = RespawningTreasureChestsPlugin._TreasureChestDvergerTownConfigEntry.Value;
+                var dataMapping = new Dictionary<string, string>
+                {
+                    {"TreasureChest_meadows", RespawningTreasureChestsPlugin._TreasureChestMeadowsConfigEntry.Value },
+                    {"TreasureChest_meadows_buried", RespawningTreasureChestsPlugin._TreasureChestMeadowsBuriedConfigEntry.Value}, 
+                    {"TreasureChest_fcrypt", RespawningTreasureChestsPlugin._TreasureChestFCryptConfigEntry.Value},
+                    {"TreasureChest_trollcave", RespawningTreasureChestsPlugin._TreasureChestTrollCaveConfigEntry.Value},
+                    {"TreasureChest_forestcrypt", RespawningTreasureChestsPlugin._TreasureChestForestCryptConfigEntry.Value},
+                    {"TreasureChest_blackforest", RespawningTreasureChestsPlugin._TreasureChestBlackForestConfigEntry.Value},
+                    {"TreasureChest_swamp", RespawningTreasureChestsPlugin._TreasureChestSwampConfigEntry.Value},
+                    {"TreasureChest_sunkencrypt", RespawningTreasureChestsPlugin._TreasureChestSunkenCryptConfigEntry.Value},
+                    {"TreasureChest_mountains", RespawningTreasureChestsPlugin._TreasureChestMountainsConfigEntry.Value},
+                    {"TreasureChest_mountaincave", RespawningTreasureChestsPlugin._TreasureChestMountainCaveConfigEntry.Value},
+                    {"TreasureChest_heath", RespawningTreasureChestsPlugin._TreasureChestHeathConfigEntry.Value},
+                    {"TreasureChest_plainsstone", RespawningTreasureChestsPlugin._TreasureChestPlainsStoneConfigEntry.Value},
+                    {"TreasureChest_dvergertower", RespawningTreasureChestsPlugin._TreasureChestDvergerTowerConfigEntry.Value},
+                    {"TreasureChest_dvergertown", RespawningTreasureChestsPlugin._TreasureChestDvergerTownConfigEntry.Value},
+                };
                 
-                SetItemData(__instance, "TreasureChest_meadows", MeadowsData);
-                SetItemData(__instance, "TreasureChest_meadows_buried", MeadowsBuriedData);
-                SetItemData(__instance, "TreasureChest_fCrypt", FCryptData);
-                SetItemData(__instance, "TreasureChest_trollcave", TrollCaveData);
-                SetItemData(__instance, "TreasureChest_forestcrypt", ForestCryptData);
-                SetItemData(__instance, "TreasureChest_blackforest", BlackForestData);
-                SetItemData(__instance, "TreasureChest_swamp", SwampData);
-                SetItemData(__instance, "TreasureChest_sunkencrypt", SunkenCryptData);
-                SetItemData(__instance, "TreasureChest_mountains", MountainsData);
-                SetItemData(__instance, "TreasureChest_mountaincave", MountainCaveData);
-                SetItemData(__instance, "TreasureChest_heath", HeathData);
-                SetItemData(__instance, "TreasureChest_plains_stone", PlainsStoneData);
-                SetItemData(__instance, "TreasureChest_dvergrtower", DvergerTowerData);
-                SetItemData(__instance, "TreasureChest_dvergrtown", DvergerTownData);
+                foreach (var entry in dataMapping)
+                {
+                    SetItemData(__instance, entry.Key, entry.Value);
+                }
+                
             }
 
             private static void SetItemData(ZNetScene scene, string prefabName, string itemData)
             {
-                GameObject obj = scene.GetPrefab(prefabName);
+                var obj = scene.GetPrefab(prefabName);
                 if (!obj) return;
                 
-                List<DropTable.DropData> drops = new List<DropTable.DropData>();
-                foreach (string data in itemData.Split(':'))
+                var drops = ParseItemData(scene, itemData);
+                var containerScript = obj.GetComponent<Container>();
+                containerScript.m_defaultItems.m_drops = drops;
+            }
+            
+            private static List<DropTable.DropData> ParseItemData(ZNetScene scene, string itemData)
+            {
+                var drops = new List<DropTable.DropData>();
+
+                foreach (var data in itemData.Split(':'))
                 {
-                    string[] dataList = data.Split(',');
-                    if (dataList.Length < 4) return;
-                    string itemName = dataList[0];
-                    string stackMin = dataList[1];
-                    string stackMax = dataList[2];
-                    string weight = dataList[3];
-                    
-                    GameObject item = scene.GetPrefab(itemName);
-                    if (!item) return;
-                    drops.Add(new DropTable.DropData()
+                    var parts = data.Split(',');
+                    if (parts.Length < 4) continue;
+
+                    var item = scene.GetPrefab(parts[0]);
+                    if (!item) continue;
+
+                    drops.Add(new DropTable.DropData
                     {
                         m_item = item,
-                        m_stackMin = int.Parse(stackMin),
-                        m_stackMax = int.Parse(stackMax),
-                        m_weight = float.Parse(weight)
+                        m_stackMin = int.TryParse(parts[1], out int stackMin) ? stackMin : 0,
+                        m_stackMax = int.TryParse(parts[2], out int stackMax) ? stackMax : 0,
+                        m_weight = float.TryParse(parts[3], out float weight) ? weight : 0f
                     });
-                } 
-                Container containerScript = obj.GetComponent<Container>();
-                containerScript.m_defaultItems.m_drops = drops;
+                }
+
+                return drops;
             }
         }
     }
