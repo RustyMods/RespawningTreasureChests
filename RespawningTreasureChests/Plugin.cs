@@ -1,23 +1,12 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using BepInEx;
 using BepInEx.Configuration;
 using BepInEx.Logging;
-using CreatureManager;
 using HarmonyLib;
-using ItemManager;
 using JetBrains.Annotations;
-using LocalizationManager;
-using LocationManager;
-using PieceManager;
 using ServerSync;
-using SkillManager;
-using StatusEffectManager;
-using UnityEngine;
-using PrefabManager = ItemManager.PrefabManager;
-using Range = LocationManager.Range;
 
 namespace RespawningTreasureChests
 {
@@ -25,7 +14,7 @@ namespace RespawningTreasureChests
     public class RespawningTreasureChestsPlugin : BaseUnityPlugin
     {
         internal const string ModName = "RespawningTreasureChests";
-        internal const string ModVersion = "1.0.0";
+        internal const string ModVersion = "1.0.2";
         internal const string Author = "RustyMods";
         private const string ModGUID = Author + "." + ModName;
         private static string ConfigFileName = ModGUID + ".cfg";
@@ -38,12 +27,7 @@ namespace RespawningTreasureChests
 
         private static readonly ConfigSync ConfigSync = new(ModGUID)
             { DisplayName = ModName, CurrentVersion = ModVersion, MinimumRequiredVersion = ModVersion };
-
-        // // Location Manager variables
-        // public Texture2D tex;
-        // private Sprite mySprite;
-        // private SpriteRenderer sr;
-
+        
         public enum Toggle
         {
             On = 1,
@@ -58,9 +42,6 @@ namespace RespawningTreasureChests
 
         public void Awake()
         {
-            // Uncomment the line below to use the LocalizationManager for localizing your mod.
-            //Localizer.Load(); // Use this to initialize the LocalizationManager (for more information on LocalizationManager, see the LocalizationManager documentation https://github.com/blaxxun-boop/LocalizationManager#example-project).
-
             _serverConfigLocked = config("1 - General", "Lock Configuration", Toggle.On,
                 "If on, the configuration is locked and can be changed by server admins only.");
             _ = ConfigSync.AddLockingConfigEntry(_serverConfigLocked);
@@ -76,6 +57,12 @@ namespace RespawningTreasureChests
                 "Respawn Trigger",
                 Respawn.OnEmpty,
                 "Toggle for type of trigger to start respawning timer");
+            _RespawningMessagesConfigEntry = config(
+                "2 - Respawn Configurations",
+                "Message log",
+                Toggle.Off,
+                "If you would like a messages to appear when chests item respawn"
+            );
             _PrefabNameContainsConfigEntry = config(
                 "2 - Respawn Configurations",
                 "Affected Prefabs Name Contains",
@@ -204,6 +191,7 @@ namespace RespawningTreasureChests
         public static ConfigEntry<string> _PrefabNameContainsConfigEntry = null!;
         public static ConfigEntry<int> _RespawnTimeConfigEntry = null!;
         public static ConfigEntry<Respawn> _RespawnTypeConfigEntry = null!;
+        public static ConfigEntry<Toggle> _RespawningMessagesConfigEntry = null!;
 
         public static ConfigEntry<string> _TreasureChestMeadowsConfigEntry = null!;
         public static ConfigEntry<string> _TreasureChestMeadowsBuriedConfigEntry = null!;

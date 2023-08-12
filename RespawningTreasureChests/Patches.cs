@@ -1,7 +1,5 @@
 ﻿using HarmonyLib;
-using UnityEngine;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using BepInEx.Logging;
 
@@ -49,6 +47,7 @@ namespace RespawningTreasureChests
                 var respawnToggle = RespawningTreasureChestsPlugin._RespawningChestConfigEntry.Value;
                 if (respawnToggle == RespawningTreasureChestsPlugin.Toggle.Off) return;
 
+                var respawnMessages = RespawningTreasureChestsPlugin._RespawningMessagesConfigEntry.Value;
                 var respawnType = RespawningTreasureChestsPlugin._RespawnTypeConfigEntry.Value;
                 var prefabNames = RespawningTreasureChestsPlugin._PrefabNameContainsConfigEntry.Value.Split(',');
                 var respawnDuration = TimeSpan.FromMinutes(RespawningTreasureChestsPlugin._RespawnTimeConfigEntry.Value);
@@ -75,7 +74,10 @@ namespace RespawningTreasureChests
                                 __instance.AddDefaultItems();
                             }
                             __instance.m_nview.GetZDO().Set(ZDOVars.s_addedDefaultItems,  true);
-                            RespawningTreasureChestsPlugin.RespawningTreasureChestsLogger.Log(LogLevel.Message, $"{__instance.name} items respawned");
+                            if (respawnMessages == RespawningTreasureChestsPlugin.Toggle.On)
+                            {
+                                RespawningTreasureChestsPlugin.RespawningTreasureChestsLogger.Log(LogLevel.Message, $"{__instance.name} items respawned");
+                            }
                         }
                     }
                 }
