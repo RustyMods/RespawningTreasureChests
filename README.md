@@ -2,10 +2,16 @@
 
 Adds the ability to easily configure treasure chests.
 
-# Features
+## Features
 - Configurable loot tables for treasure chests
 - Configurable timer to respawn items in treasure chests
 - Configurable prefab names affected by patch
+## Changelog
+```
+1.0.0 - official release
+1.0.1 - added fallbacks and fixes thanks to Azumatt
+1.0.2 - added message log toggle and cleaned up solution
+```
 ## Affected Prefab Names
 Targetted prefab names can be configured by a string list seperated by commas:
 
@@ -34,7 +40,7 @@ else
 }
 ```
 ## Debug Messaging
-Currently I have it set to log a message on the console whenever a treasure chest respawns any items. Let me know if it becomes a nuasance and I will add a toggle.
+Currently I have it set to log a message on the console whenever a treasure chest respawns any items. Let me know if it becomes a nuasance then I will add a toggle.
 ## Contact information
 For Questions or Comments, find <span style="color:orange">Rusty</span> in the Odin Plus Team Discord
 
