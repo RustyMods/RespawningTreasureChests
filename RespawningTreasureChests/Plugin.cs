@@ -14,7 +14,7 @@ namespace RespawningTreasureChests
     public class RespawningTreasureChestsPlugin : BaseUnityPlugin
     {
         internal const string ModName = "RespawningTreasureChests";
-        internal const string ModVersion = "1.0.2";
+        internal const string ModVersion = "1.0.4";
         internal const string Author = "RustyMods";
         private const string ModGUID = Author + "." + ModName;
         private static string ConfigFileName = ModGUID + ".cfg";
@@ -25,7 +25,7 @@ namespace RespawningTreasureChests
         public static readonly ManualLogSource RespawningTreasureChestsLogger =
             BepInEx.Logging.Logger.CreateLogSource(ModName);
 
-        private static readonly ConfigSync ConfigSync = new(ModGUID)
+        public static readonly ConfigSync ConfigSync = new(ModGUID)
             { DisplayName = ModName, CurrentVersion = ModVersion, MinimumRequiredVersion = ModVersion };
         
         public enum Toggle
@@ -38,6 +38,12 @@ namespace RespawningTreasureChests
         {
             OnEmpty = 1,
             OnRepeat = 0
+        }
+
+        public enum ConfigType
+        {
+            useConfig = 1,
+            useYaml = 0
         }
 
         public void Awake()
@@ -63,16 +69,14 @@ namespace RespawningTreasureChests
                 Toggle.Off,
                 "If you would like a messages to appear when chests item respawn"
             );
-            _PrefabNameContainsConfigEntry = config(
-                "2 - Respawn Configurations",
-                "Affected Prefabs Name Contains",
-                "TreasureChest",
-                "Prefab name contains following strings, multiple can be affected by separating prefab filter by commas.");
             _RespawnTimeConfigEntry = config(
                 "2 - Respawn Configurations",
                 "Respawn Time in minutes",
                 60,
                 "Timer in minutes when treasure chest emptied.");
+            _PluginConfigTypeConfigEntry = config("2 - Respawn Configurations", "Config Input Type",
+                ConfigType.useConfig,
+                "For more control, use Yaml file generated in config folder and set this to use yaml");
             #endregion
             #region Treasure Chest Configurations
             _TreasureChestMeadowsConfigEntry = config(
@@ -146,7 +150,7 @@ namespace RespawningTreasureChests
                 "MeadHealthMinor,1,2,1:MeadStaminaMinor,1,2,1:MeadPoisonResist,1,2,1:Sausages,3,6,1:Tankard_dvergr,1,1,0.1:Coins,33,66,1:Coins,33,66,1",
                 "List of item drops");
             #endregion
-
+            
             Assembly assembly = Assembly.GetExecutingAssembly();
             _harmony.PatchAll(assembly);
             SetupWatcher();
@@ -188,7 +192,6 @@ namespace RespawningTreasureChests
         private static ConfigEntry<Toggle> _serverConfigLocked = null!;
 
         public static ConfigEntry<Toggle> _RespawningChestConfigEntry = null!;
-        public static ConfigEntry<string> _PrefabNameContainsConfigEntry = null!;
         public static ConfigEntry<int> _RespawnTimeConfigEntry = null!;
         public static ConfigEntry<Respawn> _RespawnTypeConfigEntry = null!;
         public static ConfigEntry<Toggle> _RespawningMessagesConfigEntry = null!;
@@ -207,7 +210,9 @@ namespace RespawningTreasureChests
         public static ConfigEntry<string> _TreasureChestPlainsStoneConfigEntry = null!;
         public static ConfigEntry<string> _TreasureChestDvergerTowerConfigEntry = null!;
         public static ConfigEntry<string> _TreasureChestDvergerTownConfigEntry = null!;
-        
+
+        public static ConfigEntry<ConfigType> _PluginConfigTypeConfigEntry = null!;
+
         private ConfigEntry<T> config<T>(string group, string name, T value, ConfigDescription description,
             bool synchronizedSetting = true)
         {
