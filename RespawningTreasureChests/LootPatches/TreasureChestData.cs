@@ -83,6 +83,7 @@ public static class TreasureChestData
 
     private static List<ChestData> GetTreasureChests()
     {
+        HashSet<string> PrefabNames = new();
         List<ChestData> TreasureChestData = new List<ChestData>();
         GameObject[] array = Resources.FindObjectsOfTypeAll<GameObject>();
         foreach (GameObject obj in array)
@@ -91,7 +92,7 @@ public static class TreasureChestData
             if (obj.name.EndsWith("(Clone)")) continue;
             if (!obj.TryGetComponent(out Container container)) continue;
             if (!obj.TryGetComponent(out WearNTear wearNTear)) continue;
-
+            if (PrefabNames.Contains(obj.name)) continue;
             ChestData data = new ChestData()
             {
                 target_prefab_name = obj.name,
@@ -121,7 +122,9 @@ public static class TreasureChestData
                     data.default_items.Add(itemData);
                 }
             }
+
             TreasureChestData.Add(data);
+            PrefabNames.Add(data.target_prefab_name);
         }
 
         return TreasureChestData;

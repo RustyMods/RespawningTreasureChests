@@ -14,7 +14,7 @@ namespace RespawningTreasureChests
     public class RespawningTreasureChestsPlugin : BaseUnityPlugin
     {
         internal const string ModName = "RespawningTreasureChests";
-        internal const string ModVersion = "1.0.4";
+        internal const string ModVersion = "1.0.6";
         internal const string Author = "RustyMods";
         private const string ModGUID = Author + "." + ModName;
         private static string ConfigFileName = ModGUID + ".cfg";

@@ -36,6 +36,7 @@ public static class Patches
         private static void Postfix(Container __instance)
         {
             if (_RespawningChestConfigEntry.Value is Toggle.Off) return;
+            if (!ZNet.instance) return;
             if (!__instance) return;
             if (!__instance.m_nview.IsValid()) return;
             if (__instance.m_piece.IsPlacedByPlayer()) return;
